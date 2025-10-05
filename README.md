@@ -1,3 +1,10 @@
-## Run MCP-Inspector
+# MCP Server Authentication
 
-`uv run mcp dev main.py`
+## Start infrastructure (Keycloak)
+`docker compose up -d`
+
+## Run MCP-Server
+`uv run main.py`
+
+## Run MCP-Inspector
+`npx @modelcontextprotocol/inspector`

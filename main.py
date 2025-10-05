@@ -1,26 +1,28 @@
-from mcp.server.fastmcp import FastMCP
-from mcp.server.auth.provider import AccessToken, TokenVerifier
-from mcp.server.auth.settings import AuthSettings
-from pydantic import AnyHttpUrl
+from fastmcp import FastMCP
+from fastmcp.server.auth.oidc_proxy import OIDCProxy
+from dotenv import load_dotenv
+import os
 
 
-class SimpleTokenVerifier(TokenVerifier):
-    async def verify_token(self, token: str) -> AccessToken | None:
-        pass
+# Load client secret from .env
+load_dotenv()
+if not os.getenv("CLIENT_SECRET"):
+    raise Exception("Client secret not defined!")
 
-
-mcp = FastMCP(
-    "Hello World",
-    token_verifier=SimpleTokenVerifier(),
-    auth=AuthSettings(
-        issuer_url=AnyHttpUrl("auth-server-url"),
-        resource_server_url=AnyHttpUrl("http://localhost:8000"),
-        required_scopes=["user"],
-    ),
+# Create the OIDC proxy
+auth = OIDCProxy(
+    # Provider's configuration URL
+    config_url="http://localhost:8080/realms/mcp-realm/.well-known/openid-configuration",
+    # Your registered app credentials
+    client_id="mcp-client",
+    client_secret=os.getenv("CLIENT_SECRET"),
+    # Your FastMCP server's public URL
+    base_url="http://localhost:8000",
+    # Optional: customize the callback path (default is "/auth/callback")
+    # redirect_path="/custom/callback",
 )
 
+mcp = FastMCP(name="My Server", auth=auth)
 
-@mcp.tool()
-def add(x: int, y: int):
-    """Add two numbers"""
-    return int(x + y)
+if __name__ == "__main__":
+    mcp.run(transport="http")
